@@ -106,3 +106,15 @@ class Double():
     def N_ijk(self, i, j, k):
         sz = self.s0()
         return sum(self.s(i, r) * self.s(j, r) * self.s(k, r)/self.s(sz, r) for r in self.basis())
+
+    def twist(self, i):
+        """
+        The twist of the simple object i
+        """
+        return i.irr()(i.g()) / i.irr()(self._group("()"))
+
+    def p_plus(self):
+        return self._group.order()
+
+    def p_minus(self):
+        return self._group.order()
