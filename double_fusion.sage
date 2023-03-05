@@ -13,6 +13,8 @@ from sage.combinat.free_module import CombinatorialFreeModule
 from sage.rings.integer_ring import ZZ
 from sage.misc.misc import inject_variable
 from sage.misc.cachefunc import cached_method
+from sage.groups.class_function import ClassFunction
+from sage.sets.set import Set
 
 class FusionDouble(CombinatorialFreeModule):
     r"""
@@ -113,6 +115,50 @@ class FusionDouble(CombinatorialFreeModule):
         sz = self.one()
         return ZZ(sum(self.s_ij(i, r) * self.s_ij(j, r) * self.s_ij(k, r)/self.s_ij(sz, r) for r in self.basis()))
     
+    def char_Nk_ij(self, i, j, k):
+        """
+        Use character theoretic method to compute
+        \\langle i \\otimes j, k \\rangle
+        """
+        G = self._G
+        I = G.conjugacy_class(i.g())
+        J = G.conjugacy_class(j.g())
+        K = G.conjugacy_class(k.g())
+
+        ZI = G.centralizer(i.g())
+        ZJ = G.centralizer(j.g())
+        ZK = G.centralizer(k.g())
+
+        IJ = Set(I_elem * J_elem for I_elem in I for J_elem in J)
+        delta = K.set().issubset(IJ)
+        c = K.cardinality() / G.order()
+        summands = [(I_elem, J_elem) for I_elem in I for J_elem in J if I_elem * J_elem == k.g()]
+        # print(summands)
+        
+        res = 0
+        for p in summands:
+            I_elem, J_elem = p
+
+            for g in G:
+                if g^(-1) * i.g() * g == I_elem:
+                    i_twist = g
+                if g^(-1) * j.g() * g == J_elem:
+                    j_twist = g
+            A = Set(i_twist^(-1) * zi * i_twist for zi in ZI) 
+            B = Set(j_twist^(-1) * zj * j_twist for zj in ZJ) 
+            inner_summands = A.intersection(B).intersection(Set(ZK))
+            # print(inner_summands)
+            for x in inner_summands:
+                res += i.chi()(i_twist * x * i_twist^(-1)) * j.chi()(j_twist * x * j_twist^(-1)) * k.chi()(x).conjugate()
+
+            # chi_i_values = [i.chi()(i_twist * rep * i_twist^{-1}) for rep in G.conjugacy_classes_representatives()]
+            # chi_j_values = [j.chi()(j_twist * rep * i_twist^{-1}) for rep in G.conjugacy_classes_representatives()]
+            # chi_i = ClassFunction(G, chi_i_values)
+            # chi_j = ClassFunction(G, chi_j_values)
+            
+        return delta * c * res
+
+        
 
     def Nk_ij(self, i, j, k):
         r"""
